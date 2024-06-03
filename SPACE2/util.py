@@ -178,9 +178,20 @@ def align(fixed, moveable, anchors):
 
 
 @nb.njit(cache=True, fastmath=True)
-def rmsd(ab1, ab2, selection=reg_def_CDR_all, anchors=reg_def_fw_all):
+def rmsd(ab_1, ab_2, selection=reg_def_CDR_all, anchors=reg_def_fw_all):
+    #residues1 = get_residues(ab1, selection)
+    #print('why', align(ab1, ab2, anchors))
+    #residues2 = get_residues(align(ab1, ab2, anchors), selection)
+
+    ab1 = remove_insertions(ab_1)
+    ab2 = remove_insertions(align(ab_1, ab_2, anchors))
+    selection = np.intersect1d(np.intersect1d(selection, ab1[0]), ab2[0])
+
+
     residues1 = get_residues(ab1, selection)
-    residues2 = get_residues(align(ab1, ab2, anchors), selection)
+    # print('why', align(ab1, ab2, anchors))
+    residues2 = get_residues(ab2, selection)
+    print('ress', len(residues1), len(residues2))
     l = len(residues1)
 
     total = 0
@@ -201,7 +212,8 @@ def cluster_antibodies_by_CDR_length(antibodies, ids, selection=reg_def['CDR_all
     names = dict()
     
     for i, antibody in enumerate(antibodies):
-        cdr_l = "_".join(get_CDR_lengths(antibody, selection=selection))
+        # cdr_l = "_".join(get_CDR_lengths(antibody, selection=selection))
+        cdr_l = 'unite'
         if cdr_l not in clusters:
             clusters[cdr_l] = [antibody]
             names[cdr_l] = [ids[i]]
