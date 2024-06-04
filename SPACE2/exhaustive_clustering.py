@@ -20,6 +20,7 @@ def compare_CDRs_for_cluster(cluster, selection=reg_def_CDR_all, anchors=reg_def
     rmsd_calculations = np.empty(lindices)
     for i in range(lindices):
         rmsd_calculations[i] = rmsd(cluster[idx_1[i]], cluster[idx_2[i]], selection=selection, anchors=anchors)
+        print('was')
     
     return (idx_1, idx_2), rmsd_calculations
 
@@ -39,7 +40,7 @@ def get_distance_matrix(cluster, ids, selection=reg_def_CDR_all, anchors=reg_def
     return (ids, dist_mat)
 
 
-def get_distance_matrices(files, selection=reg_def["CDR_all"], anchors=reg_def["fw_all"], n_jobs=-1):
+def get_distance_matrices(files, imgt, selection=reg_def["CDR_all"], anchors=reg_def["fw_all"], n_jobs=-1):
     """ Calculate CDR distance matrices between antibody pdb files.
     Antibodies are first clustered by CDR length and then an rmsd matrix is calculated for each cluster.
 
@@ -47,7 +48,7 @@ def get_distance_matrices(files, selection=reg_def["CDR_all"], anchors=reg_def["
     :param n_jobs: number of cpus to use when parallelising. (default is all)
     :return:
     """
-    antibodies = parse_antibodies(files, n_jobs=n_jobs)
+    antibodies = parse_antibodies(files, imgt, n_jobs=n_jobs)
     cdr_clusters, cdr_cluster_ids = cluster_antibodies_by_CDR_length(antibodies, files, selection=selection)
     sorted_keys = sorted(cdr_cluster_ids, key=lambda k: len(cdr_cluster_ids[k]), reverse=True)
     
@@ -136,7 +137,7 @@ def get_clustering(df, clustering):
     return pd.DataFrame({'ID': ids, 'cluster_by_length': length, 'cluster_by_rmsd': cluster})
 
 
-def cluster_with_algorithm(method, files, selection=reg_def["CDR_all"], anchors=reg_def["fw_all"], n_jobs=-1):
+def cluster_with_algorithm(method, files, imgt=None, selection=reg_def["CDR_all"], anchors=reg_def["fw_all"], n_jobs=-1):
     """ Sort a list of antibody pdb files into clusters.
     Antibodies are first clustered by CDR length and the by structural similarity
 
@@ -144,7 +145,7 @@ def cluster_with_algorithm(method, files, selection=reg_def["CDR_all"], anchors=
     :param files: list of antibody pdb files. These will be used to identify each antibody
     :return: pandas dataframe with columns ID, cluster_by_length, cluster_by_rmsd, matrix_index
     """
-    matrices_dict = get_distance_matrices(files, selection=selection, anchors=anchors, n_jobs=n_jobs)
+    matrices_dict = get_distance_matrices(files, imgt, selection=selection, anchors=anchors, n_jobs=n_jobs)
     meta_data, rmsd_matrices = matrices_to_pandas_list(matrices_dict)
     cluster_labels = cluster_martices(rmsd_matrices, method, n_jobs=n_jobs)
 

@@ -56,37 +56,71 @@ def random_rot():
     return np.array(R).reshape((3, 3))
 
 
-def get_antibody(text):
-    lines = [x for x in text.split("\n") if x[13:15] == "CA"]
-    size = len(lines)
-    numbers = np.empty(size, dtype=int)
-    coords = np.empty((size, 3))
-
-    for i in range(size):
-        line = lines[i]
-        assert (line[21] == "H") or (line[21] == "L"), "Chains must be labelled H for heavy and L for light" 
-        chain_term = 128 if line[21] == "L" else 0
-        number = int(line[22:26])
-        if number <= 128:
-            numbers[i] = number + chain_term
-            x = float(line[30:38])
-            y = float(line[38:46])
-            z = float(line[46:54])
-            coords[i] = (x, y, z)
-        else:
-            numbers[i] = -1
-
-    return numbers[numbers!=-1], coords[numbers!=-1]
+def get_antibody(text, imgt):
+    if imgt is None:
+        lines = [x for x in text.split("\n") if x[13:15] == "CA"]
+        size = len(lines)
+        numbers = np.empty(size, dtype=int)
+        coords = np.empty((size, 3))
 
 
-def parse_antibody(file):
+        for i in range(size):
+            line = lines[i]
+            assert (line[21] == "H") or (line[21] == "L"), "Chains must be labelled H for heavy and L for light"
+            chain_term = 128 if line[21] == "L" else 0
+            number = int(line[22:26])
+            if number <= 128:
+                numbers[i] = number + chain_term
+                x = float(line[30:38])
+                y = float(line[38:46])
+                z = float(line[46:54])
+                coords[i] = (x, y, z)
+            else:
+                numbers[i] = -1
+
+        return numbers[numbers != -1], coords[numbers != -1]
+    else:
+        print(imgt)
+        lines_h = [x for x in text.split("\n") if x[13:15] == "CA" and x[21] == 'H']
+        lines_l = [x for x in text.split("\n") if x[13:15] == "CA" and x[21] == 'L']
+        size_h = len(lines_h)
+        size_l = len(lines_l)
+        numbers = np.empty(size_h + size_l, dtype=int)
+        coords = np.empty((size_h + size_l, 3))
+
+        def add_chain(size, lines):
+            for i in range(size):
+                line = lines[i]
+                assert (line[21] == "H") or (line[21] == "L"), "Chains must be labelled H for heavy and L for light"
+                chain_term = 128 if line[21] == "L" else 0
+                number = imgt[line[21]][i]
+                if number <= 128:
+                    numbers[i] = number + chain_term
+                    x = float(line[30:38])
+                    y = float(line[38:46])
+                    z = float(line[46:54])
+                    coords[i] = (x, y, z)
+                else:
+                    numbers[i] = -1
+
+        add_chain(size_h, lines_h)
+        add_chain(size_l, lines_l)
+
+        return numbers[numbers != -1], coords[numbers != -1]
+
+
+def parse_antibody(file, imgt):
     with open(file) as f:
         txt = f.read()
-    return get_antibody(txt)
+    if imgt is None:
+        return get_antibody(txt, imgt)
+    else:
+        print(len(imgt))
+        return get_antibody(txt, imgt[file])
 
 
-def parse_antibodies(files, n_jobs=20):
-    return Parallel(n_jobs=n_jobs)(delayed(parse_antibody)(file) for file in files)
+def parse_antibodies(files, imgt, n_jobs=20):
+    return Parallel(n_jobs=n_jobs)(delayed(parse_antibody)(file, imgt) for file in files)
 
 
 @nb.njit(cache=True, fastmath=True)
