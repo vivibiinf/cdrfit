@@ -20,7 +20,7 @@ def compare_CDRs_for_cluster(cluster, selection=reg_def_CDR_all, anchors=reg_def
     rmsd_calculations = np.empty(lindices)
     for i in range(lindices):
         rmsd_calculations[i] = rmsd(cluster[idx_1[i]], cluster[idx_2[i]], selection=selection, anchors=anchors)
-        print('was')
+        #print('was')
     
     return (idx_1, idx_2), rmsd_calculations
 

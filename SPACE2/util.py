@@ -80,7 +80,6 @@ def get_antibody(text, imgt):
 
         return numbers[numbers != -1], coords[numbers != -1]
     else:
-        print(imgt)
         lines_h = [x for x in text.split("\n") if x[13:15] == "CA" and x[21] == 'H']
         lines_l = [x for x in text.split("\n") if x[13:15] == "CA" and x[21] == 'L']
         size_h = len(lines_h)
@@ -88,12 +87,12 @@ def get_antibody(text, imgt):
         numbers = np.empty(size_h + size_l, dtype=int)
         coords = np.empty((size_h + size_l, 3))
 
-        def add_chain(size, lines):
-            for i in range(size):
-                line = lines[i]
+        def add_chain(start, size, lines):
+            for i in range(start, start + size):
+                line = lines[i - start]
                 assert (line[21] == "H") or (line[21] == "L"), "Chains must be labelled H for heavy and L for light"
                 chain_term = 128 if line[21] == "L" else 0
-                number = imgt[line[21]][i]
+                number = imgt[line[21]][i - start]
                 if number <= 128:
                     numbers[i] = number + chain_term
                     x = float(line[30:38])
@@ -103,8 +102,10 @@ def get_antibody(text, imgt):
                 else:
                     numbers[i] = -1
 
-        add_chain(size_h, lines_h)
-        add_chain(size_l, lines_l)
+        add_chain(0, size_h, lines_h)
+        #print(numbers)
+        add_chain(size_h, size_l, lines_l)
+        #print(numbers)
 
         return numbers[numbers != -1], coords[numbers != -1]
 
@@ -115,7 +116,7 @@ def parse_antibody(file, imgt):
     if imgt is None:
         return get_antibody(txt, imgt)
     else:
-        print(len(imgt))
+        #print(len(imgt))
         return get_antibody(txt, imgt[file])
 
 
@@ -225,7 +226,7 @@ def rmsd(ab_1, ab_2, selection=reg_def_CDR_all, anchors=reg_def_fw_all):
     residues1 = get_residues(ab1, selection)
     # print('why', align(ab1, ab2, anchors))
     residues2 = get_residues(ab2, selection)
-    print('ress', len(residues1), len(residues2))
+    #print('ress', len(residues1), len(residues2))
     l = len(residues1)
 
     total = 0
